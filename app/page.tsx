@@ -3,7 +3,7 @@
 import {useEffect,useMemo,useState} from 'react';
 
 type Tab='home'|'discover'|'avatar'|'profile';
-type Modal='menu'|'settings'|'edit'|'notifications'|'messages'|'friends'|'game'|'inventory'|'avatar'|null;
+type Modal='menu'|'settings'|'edit'|'notifications'|'messages'|'friends'|'game'|'inventory'|'avatar'|'purchase'|'play'|null;
 type Game={name:string;players:string;genre:string};
 type Item={name:string;type:string};
 
@@ -20,11 +20,14 @@ export default function Home(){
  const[name,setName]=useState(defaults.name),[display,setDisplay]=useState(defaults.display),[robux,setRobux]=useState(defaults.robux),[description,setDescription]=useState(defaults.description);
  const[search,setSearch]=useState(''),[modal,setModal]=useState<Modal>(null),[toast,setToast]=useState(''),[selectedGame,setSelectedGame]=useState<Game|null>(null);
  const[avatar,setAvatar]=useState({skin:'#d6a574',shirt:'#202020',hat:true});
+ const[playing,setPlaying]=useState<Game|null>(null);
+ const[recent,setRecent]=useState<Game[]>(games.slice(0,2));
  useEffect(()=>{try{const x=JSON.parse(localStorage.getItem('rlp-state')||'null');if(x){setName(x.name??defaults.name);setDisplay(x.display??defaults.display);setRobux(x.robux??defaults.robux);setDescription(x.description??defaults.description);setAvatar(x.avatar??avatar)}}catch{}},[]);
  useEffect(()=>{localStorage.setItem('rlp-state',JSON.stringify({name,display,robux,description,avatar}))},[name,display,robux,description,avatar]);
  useEffect(()=>{if(!toast)return;const t=setTimeout(()=>setToast(''),1800);return()=>clearTimeout(t)},[toast]);
  const filtered=useMemo(()=>games.filter(g=>g.name.toLowerCase().includes(search.toLowerCase())),[search]);
- const openGame=(g:Game)=>{setSelectedGame(g);setModal('game')};
+ const openGame=(g:Game)=>{setSelectedGame(g);setModal('game');setRecent(r=>[g,...r.filter(x=>x.name!==g.name)].slice(0,4))};
+ const launch=(g:Game)=>{setPlaying(g);setModal('play')};
  return <main className="phone">
   <header className="topbar">
    <button className="iconBtn" onClick={()=>setModal('menu')} aria-label="Menu"><Icon name="menu"/></button>
@@ -32,7 +35,7 @@ export default function Home(){
    <div className="topActions"><button className="iconBtn" onClick={()=>setModal('notifications')} aria-label="Notifications"><Icon name="bell"/></button><button className="iconBtn" onClick={()=>setModal('messages')} aria-label="Messages"><Icon name="chat"/></button></div>
   </header>
   <section className="content">
-   {tab==='home'&&<HomeScreen name={display} robux={robux} setTab={setTab} onEdit={()=>setModal('edit')} openGame={openGame}/>}
+   {tab==='home'&&<HomeScreen name={display} robux={robux} setTab={setTab} onEdit={()=>setModal('edit')} openGame={openGame} recent={recent}/>}
    {tab==='discover'&&<Discover search={search} setSearch={setSearch} games={filtered} openGame={openGame}/>}
    {tab==='avatar'&&<AvatarScreen name={display} avatar={avatar} onCustomize={()=>setModal('avatar')} onInventory={()=>setModal('inventory')}/>}
    {tab==='profile'&&<Profile name={name} display={display} robux={robux} description={description} onEdit={()=>setModal('edit')} onFriends={()=>setModal('friends')} />}
@@ -72,9 +75,10 @@ export default function Home(){
    <p className="fieldTitle">Shirt</p><div className="swatches">{['#202020','#3d5a80','#7b1e1e','#f1f1f1'].map(c=><button key={c} style={{background:c}} className="swatch" onClick={()=>setAvatar(a=>({...a,shirt:c}))}/>)}</div>
    <button className="wideBtn" onClick={()=>setAvatar(a=>({...a,hat:!a.hat}))}>{avatar.hat?'Remove hat':'Add hat'}</button>
   </Sheet>}
+  {modal==='play'&&playing&&<Sheet title={playing.name} close={()=>setModal(null)}><div className="playScreen"><div className="playViewport"><div className="sceneGrid"/><div className="playerDot"/><div className="playHud"><span>☰</span><b>{playing.name}</b><span>●</span></div></div><div className="playControls"><button onClick={()=>setToast('Jump')}</button><button onClick={()=>setToast('Action')}</button><button onClick={()=>setToast('Interact')}</button></div><button className="wideBtn" onClick={()=>setModal(null)}>Leave experience</button></div></Sheet>}
   {modal==='game'&&selectedGame&&<Sheet title={selectedGame.name} close={()=>setModal(null)}>
    <div className="gameHero"><span className="playTile">▶</span></div><h2>{selectedGame.name}</h2><p className="muted">{selectedGame.genre} · {selectedGame.players} playing</p>
-   <button className="primaryBtn" onClick={()=>{setToast('Launch simulated experience');setModal(null)}}>▶ Play</button>
+   <button className="primaryBtn" onClick={()=>launch(selectedGame)}>▶ Play</button>
    <div className="detailRow"><span>Rating</span><b>96%</b></div><div className="detailRow"><span>Visits</span><b>24.8M</b></div><div className="detailRow"><span>Created by</span><b>Simulator Studio</b></div>
   </Sheet>}
   {toast&&<div className="toast">{toast}</div>}
@@ -83,8 +87,8 @@ export default function Home(){
 
 function Icon({name}:{name:string}){const paths:Record<string,string>={menu:'M4 7h16M4 12h16M4 17h16',bell:'M6 17h12l-1.5-2.2V10a4.5 4.5 0 0 0-9 0v4.8L6 17Zm3.5 3h5',chat:'M5 6h14v10H9l-4 3v-3H5z',home:'M3 10.5 12 3l9 7.5V21h-6v-6h-6v6H3z',search:'m19 19-4-4m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0',avatar:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9a7 7 0 0 1 14 0',user:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9a7 7 0 0 1 14 0',box:'M4 7l8-4 8 4-8 4-8-4Zm0 0v10l8 4 8-4V7M8 9l8 4',settings:'M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4ZM12 3v2m0 14v2M3 12h2m14 0h2'};return <svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={paths[name]||paths.user}/></svg>}
 function NavButton({active,icon,label,onClick}:{active:boolean;icon:string;label:string;onClick:()=>void}){return <button className={'navBtn '+(active?'active':'')} onClick={onClick}><Icon name={icon}/><small>{label}</small></button>}
-function HomeScreen({name,robux,setTab,onEdit,openGame}:{name:string;robux:number;setTab:(t:Tab)=>void;onEdit:()=>void;openGame:(g:Game)=>void}){return <><div className="hero"><div><p className="eyebrow">WELCOME BACK</p><h1>{name}</h1><p className="muted">What are you playing today?</p></div><div className="balance"><span>R$</span>{robux.toLocaleString()}</div></div><SectionTitle title="Continue" action="See All" onClick={()=>setTab('discover')}/><div className="gameScroller">{games.slice(0,4).map(g=><GameCard game={g} key={g.name} onClick={()=>openGame(g)}/>)}</div><SectionTitle title="Recommended" action="See All" onClick={()=>setTab('discover')}/><div className="list">{games.slice(2).map(g=><GameRow game={g} key={g.name} onClick={()=>openGame(g)}/>)}</div><button className="editBar" onClick={onEdit}>⚙ <span>Edit simulated account</span><b>›</b></button></>}
-function Discover({search,setSearch,games,openGame}:{search:string;setSearch:(s:string)=>void;games:Game[];openGame:(g:Game)=>void}){return <><h1>Discover</h1><div className="search"><span>⌕</span><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search experiences"/></div><div className="chips"><span className="chip selected">For You</span><span className="chip">Popular</span><span className="chip">Top Rated</span></div><div className="discoverGrid">{games.map(g=><GameCard game={g} key={g.name} onClick={()=>openGame(g)}/>)}</div>{games.length===0&&<div className="empty">No experiences found.</div>}</>}
+function HomeScreen({name,robux,setTab,onEdit,openGame,recent}:{name:string;robux:number;setTab:(t:Tab)=>void;onEdit:()=>void;openGame:(g:Game)=>void;recent:Game[]}){return <><div className="hero"><div><p className="eyebrow">WELCOME BACK</p><h1>{name}</h1><p className="muted">What are you playing today?</p></div><button className="balance" onClick={onEdit}><span>R$</span>{robux.toLocaleString()}</button></div><SectionTitle title="Continue" action="See All" onClick={()=>setTab('discover')}/><div className="gameScroller">{recent.map(g=><GameCard game={g} key={g.name} onClick={()=>openGame(g)}/>)}</div><SectionTitle title="Recommended" action="See All" onClick={()=>setTab('discover')}/><div className="list">{games.slice(2).map(g=><GameRow game={g} key={g.name} onClick={()=>openGame(g)}/>)}</div><button className="editBar" onClick={onEdit}>⚙ <span>Edit simulated account</span><b>›</b></button></>}
+function Discover({search,setSearch,games,openGame}:{search:string;setSearch:(s:string)=>void;games:Game[];openGame:(g:Game)=>void}){return <><h1>Discover</h1><div className="search"><span>⌕</span><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search experiences"/></div><div className="chips"><span className="chip selected">For You</span><span className="chip">Popular</span><span className="chip">Top Rated</span><span className="chip">RPG</span><span className="chip">Survival</span></div><div className="discoverGrid">{games.map(g=><GameCard game={g} key={g.name} onClick={()=>openGame(g)}/>)}</div>{games.length===0&&<div className="empty">No experiences found.</div>}</>}
 function AvatarScreen({name,avatar,onCustomize,onInventory}:{name:string;avatar:{skin:string;shirt:string;hat:boolean};onCustomize:()=>void;onInventory:()=>void}){return <><h1>Avatar</h1><div className="avatarStage"><AvatarFigure avatar={avatar} name={name}/><p className="muted">Classic simulated avatar</p></div><div className="card"><b>Customize</b><div className="customGrid"><button onClick={onCustomize}>Body<span>›</span></button><button onClick={onCustomize}>Clothing<span>›</span></button><button onClick={onCustomize}>Accessories<span>›</span></button><button onClick={onCustomize}>Animations<span>›</span></button></div></div><button className="editBar" onClick={onInventory}>▦ <span>Open inventory</span><b>›</b></button></>}
 function AvatarFigure({avatar,name}:{avatar:{skin:string;shirt:string;hat:boolean};name:string}){return <div className="avatarFigure">{avatar.hat&&<div className="hat"/>}<div className="head" style={{background:avatar.skin}}>{name.slice(0,1)}</div><div className="body" style={{background:avatar.shirt}}/></div>}
 function Profile({name,display,robux,description,onEdit,onFriends}:{name:string;display:string;robux:number;description:string;onEdit:()=>void;onFriends:()=>void}){return <><div className="profileHead"><div className="bigAvatar">{display.slice(0,1)}</div><h1>{display}</h1><p className="muted">@{name}</p><button className="outlineBtn" onClick={onEdit}>Edit Profile</button></div><div className="stats"><button onClick={onFriends}><b>128</b><span>Friends</span></button><div><b>542</b><span>Followers</span></div><div><b>91</b><span>Following</span></div></div><div className="card"><b>About</b><p>{description}</p><span className="pill">R$ {robux.toLocaleString()}</span></div><div className="card"><b>Inventory</b><p className="muted">Open the menu or Avatar tab to browse simulated items.</p></div></>}
