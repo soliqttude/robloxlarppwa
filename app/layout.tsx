@@ -1,5 +1,12 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
-export const metadata: Metadata={title:'Roblox Mobile Simulator',description:'Editable mobile simulator'};
+import PWARegister from './PWARegister';
+
+export const metadata: Metadata={
+ title:'Roblox Mobile Simulator',
+ description:'Interactive Roblox-style mobile simulator',
+ manifest:'/manifest.webmanifest',
+ appleWebApp:{capable:true,statusBarStyle:'default',title:'Roblox Simulator'}
+};
 export const viewport: Viewport={width:'device-width',initialScale:1,viewportFit:'cover',themeColor:'#f2f2f2'};
-export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en"><body>{children}</body></html>}
+export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en"><body><PWARegister/>{children}</body></html>}
