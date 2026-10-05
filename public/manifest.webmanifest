@@ -1,1 +1,11 @@
-{"name":"Roblox Mobile Simulator","short_name":"Roblox Sim","start_url":"/","display":"standalone","background_color":"#ffffff","theme_color":"#ffffff","icons":[]}
+{
+ "name":"Roblox Mobile Simulator",
+ "short_name":"Roblox Sim",
+ "start_url":"/",
+ "scope":"/",
+ "display":"standalone",
+ "background_color":"#ffffff",
+ "theme_color":"#f2f2f2",
+ "orientation":"portrait",
+ "icons":[{"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
